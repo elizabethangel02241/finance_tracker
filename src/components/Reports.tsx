@@ -3,6 +3,7 @@ import { Download, TrendingUp, AlertCircle, Lightbulb, Zap } from 'lucide-react'
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateFinancialReport, calculateFinancialScore, predictFutureSpending } from '../services/aiReportGenerator';
+import { SpendingTrendChart, CategoryBreakdownChart, SpendingPatternChart } from './charts/SpendingChart';
 
 interface CategoryData {
   name: string;
@@ -229,32 +230,7 @@ export function Reports() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Breakdown</h3>
-          {categoryData.length > 0 ? (
-            <div className="space-y-4">
-              {categoryData.map((cat, idx) => (
-                <div key={idx}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">{cat.name}</span>
-                    <span className="text-sm font-semibold text-gray-900">{((cat.value / totalExpense) * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full"
-                      style={{
-                        width: `${(cat.value / totalExpense) * 100}%`,
-                        backgroundColor: COLORS[idx % COLORS.length]
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="h-32 flex items-center justify-center text-gray-500">No expense data</div>
-          )}
-        </div>
+        <CategoryBreakdownChart categoryData={categoryData} />
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Categories</h3>
@@ -283,42 +259,7 @@ export function Reports() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">6-Month Trend</h3>
-        {monthlyTrend.length > 0 ? (
-          <div className="space-y-4">
-            {monthlyTrend.map((month, idx) => (
-              <div key={idx}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">{month.month}</span>
-                  <div className="flex gap-4 text-sm">
-                    <span className="text-emerald-600 font-semibold">+{formatCurrency(month.income)}</span>
-                    <span className="text-red-600 font-semibold">-{formatCurrency(month.expense)}</span>
-                  </div>
-                </div>
-                <div className="flex gap-1 h-12 bg-gray-100 rounded-lg p-1 overflow-hidden">
-                  <div
-                    className="bg-emerald-500 rounded transition-all"
-                    style={{
-                      flex: month.income / Math.max(month.income, month.expense) || 0
-                    }}
-                    title={`Income: ${formatCurrency(month.income)}`}
-                  />
-                  <div
-                    className="bg-red-500 rounded transition-all"
-                    style={{
-                      flex: month.expense / Math.max(month.income, month.expense) || 0
-                    }}
-                    title={`Expense: ${formatCurrency(month.expense)}`}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="h-32 flex items-center justify-center text-gray-500">No data available</div>
-        )}
-      </div>
+      <SpendingTrendChart data={monthlyTrend} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">

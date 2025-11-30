@@ -13,6 +13,7 @@ import { Loans } from './components/Loans';
 import { Investments } from './components/Investments';
 import { Settings } from './components/Settings';
 import { AddTransactionModal } from './components/AddTransactionModal';
+import { AiFinancialAdvisor } from './components/AiFinancialAdvisor';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -45,6 +46,8 @@ function AppContent() {
         return <Goals />;
       case 'reports':
         return <Reports />;
+      case 'advisor':
+        return <AiFinancialAdvisor />;
       case 'subscriptions':
         return <Subscriptions />;
       case 'loans':

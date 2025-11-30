@@ -14,7 +14,8 @@ import {
   BarChart3,
   Repeat,
   Zap,
-  TrendingDown
+  TrendingDown,
+  MessageCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -36,6 +37,7 @@ export function Layout({ children, currentView, onViewChange, onQuickAdd }: Layo
     { id: 'budgets', name: 'Budgets', icon: Target },
     { id: 'goals', name: 'Goals', icon: TrendingUp },
     { id: 'reports', name: 'Reports', icon: BarChart3 },
+    { id: 'advisor', name: 'AI Advisor', icon: MessageCircle },
     { id: 'subscriptions', name: 'Subscriptions', icon: Repeat },
     { id: 'loans', name: 'Loans', icon: TrendingDown },
     { id: 'investments', name: 'Investments', icon: Zap },
