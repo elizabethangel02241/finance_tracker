@@ -10,7 +10,11 @@ import {
   X,
   Plus,
   Bell,
-  LogOut
+  LogOut,
+  BarChart3,
+  Repeat,
+  Zap,
+  TrendingDown
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -31,6 +35,10 @@ export function Layout({ children, currentView, onViewChange, onQuickAdd }: Layo
     { id: 'transactions', name: 'Transactions', icon: Receipt },
     { id: 'budgets', name: 'Budgets', icon: Target },
     { id: 'goals', name: 'Goals', icon: TrendingUp },
+    { id: 'reports', name: 'Reports', icon: BarChart3 },
+    { id: 'subscriptions', name: 'Subscriptions', icon: Repeat },
+    { id: 'loans', name: 'Loans', icon: TrendingDown },
+    { id: 'investments', name: 'Investments', icon: Zap },
     { id: 'settings', name: 'Settings', icon: Settings },
   ];
 

@@ -7,6 +7,10 @@ import { Accounts } from './components/Accounts';
 import { Transactions } from './components/Transactions';
 import { Budgets } from './components/Budgets';
 import { Goals } from './components/Goals';
+import { Reports } from './components/Reports';
+import { Subscriptions } from './components/Subscriptions';
+import { Loans } from './components/Loans';
+import { Investments } from './components/Investments';
 import { Settings } from './components/Settings';
 import { AddTransactionModal } from './components/AddTransactionModal';
 
@@ -39,6 +43,14 @@ function AppContent() {
         return <Budgets />;
       case 'goals':
         return <Goals />;
+      case 'reports':
+        return <Reports />;
+      case 'subscriptions':
+        return <Subscriptions />;
+      case 'loans':
+        return <Loans />;
+      case 'investments':
+        return <Investments />;
       case 'settings':
         return <Settings />;
       default:

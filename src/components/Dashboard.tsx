@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, ArrowUpRight, ArrowDownRight, AlertCircle, Repeat } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -20,6 +20,21 @@ interface RecentTransaction {
   account_name: string;
 }
 
+interface UpcomingSubscription {
+  id: string;
+  name: string;
+  amount: number;
+  next_billing_date: string;
+}
+
+interface BudgetAlert {
+  id: string;
+  name: string;
+  spent: number;
+  limit: number;
+  percentage: number;
+}
+
 export function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
@@ -29,6 +44,8 @@ export function Dashboard() {
     savingsRate: 0,
   });
   const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [upcomingSubscriptions, setUpcomingSubscriptions] = useState<UpcomingSubscription[]>([]);
+  const [budgetAlerts, setBudgetAlerts] = useState<BudgetAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,7 +58,7 @@ export function Dashboard() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    const [accountsRes, transactionsRes, recentRes] = await Promise.all([
+    const [accountsRes, transactionsRes, recentRes, subscriptionsRes, budgetsRes] = await Promise.all([
       supabase
         .from('accounts')
         .select('balance')
@@ -67,7 +84,21 @@ export function Dashboard() {
         `)
         .eq('user_id', user.id)
         .order('transaction_date', { ascending: false })
-        .limit(5)
+        .limit(5),
+
+      supabase
+        .from('subscriptions')
+        .select('id, name, amount, next_billing_date')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('next_billing_date', { ascending: true })
+        .limit(3),
+
+      supabase
+        .from('budgets')
+        .select('id, name, amount, category_id, categories(name)')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
     ]);
 
     if (accountsRes.data) {
@@ -105,6 +136,45 @@ export function Dashboard() {
         account_name: t.accounts?.name || 'Unknown',
       }));
       setRecentTransactions(formatted);
+    }
+
+    if (subscriptionsRes.data) {
+      setUpcomingSubscriptions(subscriptionsRes.data);
+    }
+
+    if (budgetsRes.data) {
+      const alerts: BudgetAlert[] = [];
+      for (const budget of budgetsRes.data) {
+        const { data: transactions } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('user_id', user.id)
+          .eq('type', 'expense')
+          .gte('transaction_date', startOfMonth);
+
+        let spent = 0;
+        if (transactions) {
+          if (budget.category_id) {
+            spent = transactions
+              .filter(t => t.category_id === budget.category_id)
+              .reduce((sum, t) => sum + Number(t.amount), 0);
+          } else {
+            spent = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
+          }
+        }
+
+        const percentage = (spent / Number(budget.amount)) * 100;
+        if (percentage >= 80) {
+          alerts.push({
+            id: budget.id,
+            name: budget.name,
+            spent,
+            limit: Number(budget.amount),
+            percentage,
+          });
+        }
+      }
+      setBudgetAlerts(alerts);
     }
 
     setLoading(false);
@@ -184,6 +254,25 @@ export function Dashboard() {
         </div>
       </div>
 
+      {budgetAlerts.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex gap-3">
+            <AlertCircle className="text-amber-600 flex-shrink-0" size={20} />
+            <div className="flex-1">
+              <h4 className="font-semibold text-amber-900 mb-2">Budget Alerts</h4>
+              <div className="space-y-2">
+                {budgetAlerts.map((alert) => (
+                  <div key={alert.id} className="flex items-center justify-between text-sm">
+                    <span className="text-amber-800">{alert.name}</span>
+                    <span className="font-semibold text-amber-700">{alert.percentage.toFixed(0)}% used</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
@@ -251,6 +340,33 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+
+      {upcomingSubscriptions.length > 0 && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Repeat size={20} />
+            Upcoming Subscriptions
+          </h3>
+          <div className="space-y-3">
+            {upcomingSubscriptions.map((sub) => {
+              const daysUntil = Math.ceil((new Date(sub.next_billing_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+              return (
+                <div key={sub.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition border border-gray-100">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{sub.name}</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Due in {daysUntil} days
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">{formatCurrency(sub.amount)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
